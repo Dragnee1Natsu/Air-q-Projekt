@@ -1,4 +1,5 @@
 {
+    "git.ignoreLimitWarning": true,
     "sqltools.connections": [
         {
             "mysqlOptions": {
