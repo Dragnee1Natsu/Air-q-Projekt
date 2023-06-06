@@ -9,10 +9,10 @@
             "server": "localhost",
             "port": 3306,
             "driver": "MariaDB",
-            "name": "airQ Datenbank",
-            "database": "airq_data",
             "username": "airq",
-            "password": "airq"
+            "password": "airq",
+            "database": "airq_data",
+            "name": "air-Q Datenbank"
         }
     ]
 }
