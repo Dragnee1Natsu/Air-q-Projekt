@@ -92,11 +92,12 @@ class AnalyticsHandler:
         [s.set_yticks(()) for s in sm.reshape(-1)]
         plt.show()
 
-    def plot_line_chart(self, variables):
+    def plot_line_chart(self, variables, dual_axis=False):
         """Plots a line chart with variables from the DataFrame.
 
         Args:
             variables (list of str): A list containing the names of variables to plot.
+            dual_axis (bool): If True and only two variables are provided, a dual y-axis is created.
 
         """
 
@@ -113,23 +114,29 @@ class AnalyticsHandler:
         sorted_data = self.data.sort_values('timestamp')
 
         # Create the plot
-        plt.figure(figsize=(10, 6))
+        fig, ax1 = plt.subplots(figsize=(10, 6))
 
         # Add each variable to the plot
-        for var in variables:
-            plt.plot(sorted_data['timestamp'], sorted_data[var], label=var)
+        for i, var in enumerate(variables):
+            if dual_axis and len(variables) == 2 and i == 1:  # create a second axis for the second variable
+                ax2 = ax1.twinx()
+                ax2.plot(sorted_data['timestamp'], sorted_data[var], label=var, color='tab:orange')
+                ax2.set_ylabel(var, color='tab:orange')
+            else:
+                ax1.plot(sorted_data['timestamp'], sorted_data[var], label=var)
 
         # Add title and labels
-        plt.title("Line chart")
-        plt.xlabel("Time")
-        plt.ylabel("Value")
+        ax1.set_title("Line chart")
+        ax1.set_xlabel("Time")
+        ax1.set_ylabel(variables[0])
 
         # Add a legend
-        plt.legend()
+        fig.legend()
 
         # Display the plot
         plt.show()
 
+        
     def invesigate_correlation(self, variable1, variable2, plot_trendline=False):
         """Plots a scatter and line chart with variables from the DataFrame.
 
