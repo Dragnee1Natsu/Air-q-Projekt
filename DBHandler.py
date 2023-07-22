@@ -108,6 +108,10 @@ class DBHandler():
         except mariadb.Error as e:
             print(f"Error connecting to MariaDB Platform: {e}")
             sys.exit(1)
+    
+    def connect_to_DB(self, user="airq", password="airq", host="localhost", port=3306, database="airq_data"):
+        
+        return self.__connect_to_DB(user, password, host, port, database)
             
     def get_latest_timestamp(self, name):
         """Gets the latest timestamp in the database
