@@ -4,12 +4,9 @@ import pandas as pd
 
 # Visualization Stuff
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import seaborn as sns
 
-# DB stuff
-from sqlalchemy import create_engine
-import mariadb
-import sys
 
 class AnalyticsHandler:
     """
@@ -34,7 +31,7 @@ class AnalyticsHandler:
         heatmap = sns.heatmap(corr, mask=mask, vmin=-1, vmax=1, annot=True, cmap='BrBG')
         heatmap.set_title('Triangle Correlation Heatmap', fontdict={'fontsize':18}, pad=16)
 
-    def analyze_correlations(self, threshold, plot=False):
+    def analyze_correlations(self, threshold, plot=False, trendline=False):
         """
         Calculates the correlation matrix and finds pairs of variables with correlation exceeding the provided threshold.
         Optionally plots scatter plots of pairs with high correlation.
@@ -42,6 +39,7 @@ class AnalyticsHandler:
         Args:
             threshold (float): The correlation threshold.
             plot (bool, optional): Whether to plot scatter plots of the pairs with high correlation. Default is False.
+            trendline (bool, optional): Whether to plot a trend line on the scatter plot. Default is False.
         """
         # Calculate the correlation matrix
         correlation_matrix = self.data.corr()
@@ -70,15 +68,56 @@ class AnalyticsHandler:
             
             if plot:
                 # Create a scatter plot for the pair
-                self.data.plot.scatter(x=list(pair)[0], y=list(pair)[1])
-                plt.title(f'Correlation between {list(pair)[0]} and {list(pair)[1]}')
+                x = list(pair)[0]
+                y = list(pair)[1]
+
+                # Convert the timestamps to numerical values if either variable is a datetime
+                if np.issubdtype(self.data[x].dtype, np.datetime64):
+                    x_values = mdates.date2num(self.data[x])
+                else:
+                    x_values = self.data[x]
+
+                if np.issubdtype(self.data[y].dtype, np.datetime64):
+                    y_values = mdates.date2num(self.data[y])
+                else:
+                    y_values = self.data[y]
+
+                plt.scatter(x_values, y_values)
+
+                if trendline:
+                    # Perform the polynomial fit and plot the trendline
+                    coefficients = np.polyfit(x_values, y_values, 1)
+                    polynomial = np.poly1d(coefficients)
+                    xs = np.linspace(min(x_values), max(x_values), 100)
+                    plt.plot(xs, polynomial(xs), color='red')
+
+                plt.title(f'Correlation between {x} and {y}')
+                plt.xlabel(x)
+                plt.ylabel(y)
                 plt.show()
 
-    def scatter_matrix(self):
+    def scatter_matrix(self, threshold=None):
         """
         Creates and displays a scatter matrix of the DataFrame.
+
+        Args:
+            threshold (float, optional): The correlation threshold for plotting variable pairs.
         """
-        sm = pd.plotting.scatter_matrix(self.data, figsize=(30, 30), diagonal='kde')
+
+        # Calculate the correlation matrix if a threshold is specified
+        if threshold is not None:
+            correlation_matrix = self.data.corr().abs()
+
+            # Create a boolean mask for the pairs of variables with correlation above the threshold
+            mask = (correlation_matrix > threshold) & (correlation_matrix != 1)
+
+            # Create a list of variable pairs with correlation above the threshold
+            variables_to_plot = [column for column in correlation_matrix.columns if mask[column].any()]
+        else:
+            variables_to_plot = self.data.columns
+
+        # Create the scatter matrix for the selected variables
+        sm = pd.plotting.scatter_matrix(self.data[variables_to_plot], figsize=(30, 30), diagonal='kde')
 
         for ax in sm.ravel():
             ax.set_xlabel(ax.get_xlabel(), fontsize = 20, rotation = 45)
@@ -135,8 +174,50 @@ class AnalyticsHandler:
 
         # Display the plot
         plt.show()
+    
+    def plot_scatter(self, var1, var2, trendline=False):
+        """Plots a scatter plot of the provided variables from the DataFrame and, optionally, a trend line.
 
-        
+        Args:
+            var1 (str): The name of the variable to plot on the x-axis.
+            var2 (str): The name of the variable to plot on the y-axis.
+            trendline (bool, optional): Whether to plot a trend line. Default is False.
+        """
+        # Check if the provided variables exist in the DataFrame
+        if var1 not in self.data.columns:
+            raise ValueError(f"The variable '{var1}' does not exist in the DataFrame.")
+        if var2 not in self.data.columns:
+            raise ValueError(f"The variable '{var2}' does not exist in the DataFrame.")
+
+        # Create a scatter plot
+        plt.scatter(self.data[var1], self.data[var2], label=f'{var1} vs {var2}')
+
+        if trendline:
+            # Convert the timestamps to numerical values if either variable is a datetime
+            if np.issubdtype(self.data[var1].dtype, np.datetime64):
+                x = mdates.date2num(self.data[var1])
+            else:
+                x = self.data[var1]
+
+            if np.issubdtype(self.data[var2].dtype, np.datetime64):
+                y = mdates.date2num(self.data[var2])
+            else:
+                y = self.data[var2]
+
+            # Perform the polynomial fit and plot the trendline
+            coefficients = np.polyfit(x, y, 1)
+            polynomial = np.poly1d(coefficients)
+            xs = np.linspace(min(x), max(x), 100)
+            plt.plot(xs, polynomial(xs), color='red')
+
+        # Add title and labels
+        plt.title(f'Scatter plot: {var1} vs {var2}')
+        plt.xlabel(var1)
+        plt.ylabel(var2)
+
+        # Display the plot
+        plt.show()
+
     def invesigate_correlation(self, variable1, variable2, plot_trendline=False):
         """Plots a scatter and line chart with variables from the DataFrame.
 
