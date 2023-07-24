@@ -108,7 +108,6 @@ class DBHandler():
         except mariadb.Error as e:
             print(f"Error connecting to MariaDB Platform: {e}")
             sys.exit(1)
-    
             
     def get_latest_timestamp(self, name):
         """Gets the latest timestamp in the database
