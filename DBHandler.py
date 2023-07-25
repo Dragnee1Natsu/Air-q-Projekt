@@ -543,4 +543,3 @@ class DBHandler():
             print(f"Error while fetching data range: {e}")
             return None
 
-
