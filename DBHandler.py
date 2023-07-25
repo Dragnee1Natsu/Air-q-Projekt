@@ -219,6 +219,7 @@ class DBHandler():
         # Get latest entry in table
         latest = self.get_latest_timestamp(tablename)
 
+
         # Connect to DB
         conn = self.__connect_to_DB()
         # Get Cursor
@@ -229,11 +230,12 @@ class DBHandler():
 
         # check if latest entry is further than startdate
         if latest is not None:
+            latest_datetime = datetime.combine(latest, datetime.min.time())
             print("_____________________________________________________________________________")
-            print("Latest enrty in table '" + tablename + "' is " + datetime.strftime(latest, "%Y-%m-%d"))
+            print("Latest entry in table '" + tablename + "' is " + datetime.strftime(latest, "%Y-%m-%d"))
             # change startdate for performance
-            if latest > startdate:
-                startdate = latest
+            if latest_datetime > startdate:
+                startdate = latest_datetime
         
         # Establish connection to the air-Q
         connection = http.client.HTTPConnection(self.__airqIP)
@@ -269,6 +271,7 @@ class DBHandler():
 
         conn.commit()
         connection.close()
+
 
     def create_table(self, name):
         """Creates a new database table with the schema for the metrics of the airq sensor.
